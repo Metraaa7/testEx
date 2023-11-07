@@ -31,21 +31,16 @@ class GetApiDataController extends Controller
 
     public function handle(): string
     {
-
         ini_set('max_execution_time', 1000);
         $url = 'https://ru.enote.link/08efd710-4709-478f-bac1-2d1b7e209599/odata/standard.odata/Document_ТоварныйЧек';
         BillData::query()->forceDelete();
         $parentXml = $this->getXml($url);
-        $counterM = 0;
-        $counterCh = 0;
-
         $elements = $parentXml->entry;
 
         foreach ($elements as $element) {
             Bill::updateOrInsert(
                 ['href' => (string)$element->id],
             );
-            $counterM++;
             $url1 = (string)$element->id;
             $child = $this->getXml(str_replace('http://', 'https://', $url1));
             $content = $child->content;
@@ -53,18 +48,18 @@ class GetApiDataController extends Controller
             $data = $propertiesXml->children('d', true);
 
 
-            $b = new BillData();
+            $bill = new BillData();
             foreach ((array)$data as $key => $value) {
                 if ($value instanceof SimpleXMLElement) {
                     continue;
                 }
 
                 if (in_array($key, array_keys(BillData::$fields))) {
-                    $b->{BillData::$fields[$key]} = $value;
+                    $bill->{BillData::$fields[$key]} = $value;
                 }
 
             }
-            $b->save();
+            $bill->save();
         }
 
         return 'Data is passed to database';
